@@ -1,0 +1,43 @@
+# ------------------------
+# Python
+# ------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.egg-info/
+*.egg
+*.log
+
+# ------------------------
+# Environment / Secrets
+# ------------------------
+.env
+.env.*
+
+# ------------------------
+# Virtual Environments
+# ------------------------
+venv/
+.venv/
+env/
+ENV/
+
+# ------------------------
+# IDE / Editor Specific
+# ------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store  # for macOS
+Thumbs.db  # for Windows
+
+# ------------------------
+# Pytest / Coverage
+# ------------------------
+.pytest_cache/
+coverage.*
+htmlcov/
+.cache/
