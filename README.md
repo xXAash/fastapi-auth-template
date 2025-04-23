@@ -46,7 +46,7 @@ tests/
 3. **Initialize database**
 
    ```bash
-   python app/auth/init_db.py
+   python -m app/auth/init_db.py
    ```
 
 4. **Run the app**
