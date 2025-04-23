@@ -1,76 +1,66 @@
-# Money App – Personal Financial Tracker
+# FastAPI Authentication Template 🚀
 
-## Overview
+A production-ready FastAPI template that supports:
 
-Money App is a modular, microservice-based application designed to help users gain control over their finances by tracking:
+- User registration and login with hashed passwords (bcrypt)
+- JWT authentication with token expiry
+- Protected routes
+- SQLite database integration (easy to swap with PostgreSQL/MySQL)
+- Modular code structure
+- Fully tested with `pytest`
 
-- Spending and income
-- Savings goals and automatic transfers
-- Investment accounts (e.g., Roth IRA, 401k)
-- Debts and loan payments
-- Credit card usage, rewards, and due dates
+## 📁 Project Structure
 
-The app prioritizes simplicity, clarity, and security, and is built with scalability in mind.
-
----
-
-## Architecture
-
-- **Frontend:** React
-- **Backend:** Python (FastAPI)
-- **Structure:**
 ```
-/frontend         - React client  
-/microservices    - Auth, savings, debt, investments, creditcards  
-/shared           - Shared schemas and configuration  
-/docs             - Wireframes and planning notes
+app/
+├── auth/
+│   ├── models.py
+│   ├── routers/
+│   │   └── auth_routes.py
+│   └── utils/
+│       └── jwt_utils.py
+├── database.py
+├── main.py
+tests/
+└── test_auth.py
 ```
-  
----
 
-## Current Status
+## 🚀 Getting Started
 
-- Project structure initialized
-- README drafted
-- Auth and frontend scaffolding in progress
-- Sprint 2 will focus on implementing the Cash Accounts section
+1. **Install dependencies**
 
-Project progress is tracked using a GitHub Project Board.
+   ```bash
+   python -m venv venv
+   venv\Scripts\activate  # or source venv/bin/activate on Mac/Linux
+   pip install -r requirements.txt
+   ```
 
----
+2. **Create `.env`**
 
-## Sprint 1 Goals
+   ```env
+   SECRET_KEY=your_secret_key_here
+   DATABASE_URL=sqlite:///./auth.db
+   ACCESS_TOKEN_EXPIRE_MINUTES=60
+   ```
 
-- Set up project folders and shared files
-- Scaffold the FastAPI authentication microservice
-- Initialize the React frontend
-- Define transaction schema and bank link mappings
-- Organize planning documentation
+3. **Initialize database**
 
----
+   ```bash
+   python app/auth/init_db.py
+   ```
 
-## Developer Setup
+4. **Run the app**
+   ```bash
+   uvicorn app.main:app --reload
+   ```
 
-### Requirements
+## 🧪 Running Tests
 
-- Python 3.10+
-- Node.js + npm
-- (Optional) Virtualenv or Pipenv for backend setup
-
-### Running the Project
-
-**Frontend:**
 ```bash
-cd frontend
-npm install
-npm start
+pytest -v
 ```
 
-**Backend:**
-```bash
-cd microservices/auth
+## 📌 Notes
 
-
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
+- You can easily switch out SQLite for another database by updating `DATABASE_URL` in `.env`.
+- For production, make sure to configure secure secret keys and HTTPS.
