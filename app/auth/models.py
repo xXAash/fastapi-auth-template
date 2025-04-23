@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String
-from microservices.database import Base
+from app.database import Base
 
 class User(Base):
     __tablename__ = "users"  # This will create a table named 'users'

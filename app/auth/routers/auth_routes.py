@@ -9,13 +9,14 @@ from passlib.context import CryptContext
 # -------------------------
 # Internal utility imports
 # -------------------------
-from microservices.auth.utils.jwt_utils import create_access_token, verify_access_token
+from app.auth.utils.jwt_utils import create_access_token, verify_access_token
+from app.auth.models import User
+from app.database import get_db
 
 # -------------------------
-# Temporary in-memory "database"
-# (replace with actual DB in production)
+# Database Connection and ORM imports
 # -------------------------
-fake_users_db = {}
+from sqlalchemy.orm import Session
 
 # -------------------------
 # Password hashing setup using bcrypt
@@ -69,22 +70,27 @@ class LoginRequest(BaseModel):
 # -------------------------
 
 @router.post("/register")
-async def register(payload: RegisterRequest):
+async def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     """
     Register a new user.
     - Checks if user already exists
     - Hashes password and stores user
     - Returns success or error message
     """
-    if payload.username in fake_users_db:
-        return {"error": "User already exists"}
+    # Validate input
+    if not payload.username.strip() or not payload.password.strip():
+        raise HTTPException(status_code=400, detail="Username and password are required")
 
+    # Check if the user already exists in the database
+    existing_user = db.query(User).filter(User.username == payload.username).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User already exists")
+
+    # Hash the password and create a new user
     hashed_pw = hash_password(payload.password)
-
-    fake_users_db[payload.username] = {
-        "username": payload.username,
-        "password": hashed_pw
-    }
+    new_user = User(username=payload.username, password=hashed_pw)
+    db.add(new_user)
+    db.commit()
 
     return {"message": f"User {payload.username} registered successfully"}
 
@@ -93,20 +99,23 @@ async def register(payload: RegisterRequest):
 # -------------------------
 
 @router.post("/login")
-async def login(payload: LoginRequest):
+async def login(payload: LoginRequest, db: Session = Depends(get_db)):
     """
     Authenticate a user and return a JWT access token.
     - Validates username/password
     - Returns error on failure or token on success
     """
-    user = fake_users_db.get(payload.username)
+    # Fetch the user from the database
+    user = db.query(User).filter(User.username == payload.username).first()
     if not user:
-        return {"error": "User not found"}
+        raise HTTPException(status_code=404, detail="User not found")
 
-    if not verify_password(payload.password, user["password"]):
-        return {"error": "Incorrect password"}
+    # Verify the password
+    if not verify_password(payload.password, user.password):
+        raise HTTPException(status_code=401, detail="Incorrect password")
 
-    access_token = create_access_token(data={"sub": payload.username})
+    # Create a JWT token
+    access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
 # -------------------------
@@ -114,11 +123,12 @@ async def login(payload: LoginRequest):
 # -------------------------
 
 @router.get("/protected")
-async def protected_route(token: str = Depends(oauth2_scheme)):
+async def protected_route(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     """
     A test-protected route that requires a valid JWT token.
     Returns a greeting with the user's username.
     """
+    # Verify the JWT token
     payload = verify_access_token(token)
     if not payload:
         raise HTTPException(
@@ -127,5 +137,10 @@ async def protected_route(token: str = Depends(oauth2_scheme)):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Fetch the user from the database (optional)
     username = payload.get("sub")
-    return {"message": f"Hello, {username}. You have access!"}
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {"message": f"Hello, {user.username}. You have access!"}
