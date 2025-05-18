@@ -17,13 +17,18 @@ A secure, modular FastAPI starter with:
 ```
 app/
 ├── auth/
-│   ├── models.py
 │   ├── routers/
+|   |   ├── __init__.py
 │   │   └── auth_routes.py
-│   └── utils/
-│       └── jwt_utils.py
+│   ├── utils/
+|   |   ├── __init__.py
+│   |   └── jwt_utils.py
+│   ├── __init__.py
+|   ├── init_db.py
+|   └── models.py
+├── __init__.py
 ├── database.py
-├── main.py
+└── main.py
 tests/
 └── test_auth.py
 ```
