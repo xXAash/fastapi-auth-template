@@ -1,3 +1,5 @@
+*.db
+
 # ------------------------
 # Python
 # ------------------------
@@ -41,3 +43,4 @@ Thumbs.db  # for Windows
 coverage.*
 htmlcov/
 .cache/
+*.db
