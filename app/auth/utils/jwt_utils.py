@@ -9,14 +9,18 @@ from datetime import datetime, timedelta, timezone  # Used for setting expiratio
 
 load_dotenv()  # Load environment variables from .env file
 
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not JWT_SECRET_KEY:
+    raise RuntimeError("JWT_SECRET_KEY is not set. Please define it in your .env file.")
+
 # ----------------------------
 # JWT Configuration
 # ----------------------------
 
 # Load secret key from environment
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = "HS256"  # JWT algorithm used for encoding
-ACCESS_TOKEN_EXPIRE_MINUTES = 60  # Default token expiry (60 minutes)
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", 60))
 
 # ----------------------------
 # Create Access Token
@@ -38,7 +42,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode.update({"exp": expire})
 
     # Encode the token using the secret and algorithm
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 # ----------------------------
@@ -56,7 +60,7 @@ def verify_access_token(token: str):
     """
     try:
         # Decode and validate token
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
         return payload  # e.g., {"sub": "username", "exp": "..."}
     except JWTError:
         return None  # Invalid signature, expired token, malformed token

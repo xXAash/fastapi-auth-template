@@ -1,15 +1,18 @@
-# FastAPI Authentication Template 🚀
+# 🔐 FastAPI Authentication Template
 
-A production-ready FastAPI template that supports:
+A secure, modular FastAPI starter with:
 
-- User registration and login with hashed passwords (bcrypt)
-- JWT authentication with token expiry
-- Protected routes
-- SQLite database integration (easy to swap with PostgreSQL/MySQL)
-- Modular code structure
-- Fully tested with `pytest`
+- ✅ Email & password-based user registration
+- 🔐 Password hashing with bcrypt
+- 🪪 JWT authentication (configurable expiration)
+- 🔐 Protected routes via OAuth2 bearer tokens
+- 🗃️ SQLite by default (easily swappable via `DATABASE_URL`)
+- 🧪 Full test coverage with `pytest`
+- 🧱 Clean and scalable project structure
 
-## 📁 Project Structure
+---
+
+## 🗂️ Project Structure
 
 ```
 app/
@@ -25,34 +28,38 @@ tests/
 └── test_auth.py
 ```
 
-## 🚀 Getting Started
+## ⚙️ Getting Started
 
-1. **Install dependencies**
+### 1. Create virtual environment & install dependencies
 
-   ```bash
-   python -m venv venv
-   venv\Scripts\activate  # or source venv/bin/activate on Mac/Linux
-   pip install -r requirements.txt
-   ```
+```bash
+python -m venv venv
+.\venv\Scripts\activate           # On Windows
+# source venv/bin/activate       # On macOS/Linux
 
-2. **Create `.env`**
+pip install -r requirements.txt
+```
 
-   ```env
-   SECRET_KEY=your_secret_key_here
-   DATABASE_URL=sqlite:///./auth.db
-   ACCESS_TOKEN_EXPIRE_MINUTES=60
-   ```
+### 2. Create `.env` file
 
-3. **Initialize database**
+```env
+JWT_SECRET_KEY=your_super_secret_key
+JWT_ALGORITHM=HS256
+JWT_EXPIRE_MINUTES=60
+DATABASE_URL=sqlite:///./auth.db
+```
 
-   ```bash
-   python app/auth/init_db.py
-   ```
+### 3. Initialize database
 
-4. **Run the app**
-   ```bash
-   uvicorn app.main:app --reload
-   ```
+```bash
+python app/auth/utils/init_db.py
+```
+
+### 4. Run the app
+
+```bash
+uvicorn app.main:app --reload
+```
 
 ## 🧪 Running Tests
 
@@ -62,5 +69,10 @@ pytest -v
 
 ## 📌 Notes
 
-- You can easily switch out SQLite for another database by updating `DATABASE_URL` in `.env`.
-- For production, make sure to configure secure secret keys and HTTPS.
+- Use EmailStr for validation and stricter user inputs.
+
+- Easily extend the User model with fields like name, created_at, etc.
+
+- To switch to PostgreSQL, update DATABASE_URL and install psycopg2.
+
+- Always keep .env secrets out of version control (.gitignore already handles this).

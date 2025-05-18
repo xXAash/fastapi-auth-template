@@ -3,8 +3,9 @@
 # -------------------------
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, field_validator
 from passlib.context import CryptContext
+import re
 
 # -------------------------
 # Internal utility imports
@@ -26,16 +27,14 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def hash_password(password: str) -> str:
     """
     Hashes a plain-text password using bcrypt.
-    Returns the hashed password.
     """
-    return pwd_context.hash(password)
+    return pwd_context.hash(password) # Return the hashed password.
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Verifies a plain-text password against the stored hash.
-    Returns True if they match, False otherwise.
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(plain_password, hashed_password) # Return True if the password matches, False otherwise.
 
 # -------------------------
 # FastAPI router instance
@@ -50,85 +49,70 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 # -------------------------
 # Request models
 # -------------------------
-
 class RegisterRequest(BaseModel):
-    """
-    Request body model for user registration.
-    """
-    username: str
+    email: EmailStr
     password: str
 
+    @field_validator("password")
+    @classmethod
+    def strong_password(cls, value):
+        allowed_specials = "!@#$%^&*()_+-=.?/"
+        special_char_pattern = f"[{re.escape(allowed_specials)}]"
+
+        if len(value) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        if not re.search(r"\d", value):
+            raise ValueError("Password must contain at least one number")
+        if not re.search(r"[A-Z]", value):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[a-z]", value):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not re.search(special_char_pattern, value):
+            raise ValueError(f"Password must contain at least one special character from: {allowed_specials}")
+        if re.search(rf"[^\w\d{re.escape(allowed_specials)}]", value):
+            raise ValueError("Password contains invalid characters")
+        return value
+
 class LoginRequest(BaseModel):
-    """
-    Request body model for user login.
-    """
-    username: str
+    email: EmailStr
     password: str
 
 # -------------------------
 # /register route
 # -------------------------
-
 @router.post("/register")
 async def register(payload: RegisterRequest, db: Session = Depends(get_db)):
-    """
-    Register a new user.
-    - Checks if user already exists
-    - Hashes password and stores user
-    - Returns success or error message
-    """
-    # Validate input
-    if not payload.username.strip() or not payload.password.strip():
-        raise HTTPException(status_code=400, detail="Username and password are required")
-
-    # Check if the user already exists in the database
-    existing_user = db.query(User).filter(User.username == payload.username).first()
+    existing_user = db.query(User).filter(User.email == payload.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="User already exists")
 
-    # Hash the password and create a new user
     hashed_pw = hash_password(payload.password)
-    new_user = User(username=payload.username, password=hashed_pw)
+    new_user = User(email=payload.email, password=hashed_pw)
     db.add(new_user)
     db.commit()
 
-    return {"message": f"User {payload.username} registered successfully"}
+    return {"message": f"User {payload.email} registered successfully"}
 
 # -------------------------
 # /login route
 # -------------------------
-
 @router.post("/login")
 async def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    """
-    Authenticate a user and return a JWT access token.
-    - Validates username/password
-    - Returns error on failure or token on success
-    """
-    # Fetch the user from the database
-    user = db.query(User).filter(User.username == payload.username).first()
+    user = db.query(User).filter(User.email == payload.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Verify the password
     if not verify_password(payload.password, user.password):
         raise HTTPException(status_code=401, detail="Incorrect password")
 
-    # Create a JWT token
-    access_token = create_access_token(data={"sub": user.username})
+    access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
 # -------------------------
 # /protected route (JWT required)
 # -------------------------
-
 @router.get("/protected")
 async def protected_route(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """
-    A test-protected route that requires a valid JWT token.
-    Returns a greeting with the user's username.
-    """
-    # Verify the JWT token
     payload = verify_access_token(token)
     if not payload:
         raise HTTPException(
@@ -137,10 +121,9 @@ async def protected_route(token: str = Depends(oauth2_scheme), db: Session = Dep
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Fetch the user from the database (optional)
-    username = payload.get("sub")
-    user = db.query(User).filter(User.username == username).first()
+    email = payload.get("sub")
+    user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return {"message": f"Hello, {user.username}. You have access!"}
+    return {"message": f"Hello, {user.email}. You have access!"}
